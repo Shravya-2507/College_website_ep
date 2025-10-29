@@ -1,87 +1,281 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Teacher Dashboard - Attendance</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Teacher Dashboard</title>
   <style>
-    body { font-family: Arial, sans-serif; }
-    nav { background: #004080; color: white; padding: 10px; display: flex; justify-content: space-between; }
-    table { border-collapse: collapse; width: 80%; margin: 20px auto; }
-    th, td { padding: 10px; border: 1px solid #ccc; text-align: center; }
-    .btn { display: block; margin: 20px auto; padding: 10px 20px; font-size: 16px; }
+    /* 🔹 Global */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Poppins", sans-serif;
+    }
+
+    body {
+      background: #eef3fb;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 🔹 Topbar */
+    .topbar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 65px;
+      background: linear-gradient(90deg, #004080, #0073e6);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 50px;
+      z-index: 10;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    .topbar button {
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 17px;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 10px 20px;
+      transition: 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .topbar button:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      transform: scale(1.05);
+    }
+
+    /* 🔹 Sidebar */
+    .sidebar {
+      position: fixed;
+      top: 65px;
+      left: 0;
+      bottom: 0;
+      width: 280px;
+      background: #002b5b;
+      color: white;
+      padding: 25px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      box-shadow: 3px 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .profile-pic {
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: url('https://cdn-icons-png.flaticon.com/512/3135/3135715.png') center/cover no-repeat;
+      border: 4px solid #ffffff;
+      box-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+      margin-bottom: 15px;
+    }
+
+    .teacher-name {
+      font-size: 20px;
+      color: #ffffff; 
+      font-weight: 600;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    .teacher-info {
+      background: #a69eac1a;
+      padding: 15px;
+      border-radius: 10px;
+      width: 100%;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: left;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .teacher-info b {
+      color: #aad4ff;
+    }
+
+    /* 🔹 Main content */
+    .main {
+      flex: 1;
+      margin-left: 280px;
+      margin-top: 65px;
+      padding: 40px;
+      overflow-y: auto;
+      background: #f7faff;
+    }
+
+    h2 {
+      font-size: 28px;
+      color: #004080;
+      font-weight: 600;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    p {
+      font-size: 16px;
+      color: #f6ea7e;
+      margin-bottom: 15px;
+    }
+
+    /* 🔹 Tables */
+    table {
+      border-collapse: collapse;
+      width: 95%;
+      margin: 20px auto;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    th {
+      background: #3a5b7d;
+      color: white;
+      padding: 12px;
+      font-size: 15px;
+    }
+
+    td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    tr:hover {
+      background-color: #f0f6ff;
+    }
+
+    /* 🔹 Buttons */
+    .btn {
+      display: inline-block;
+      margin: 20px auto;
+      padding: 10px 25px;
+      font-size: 16px;
+      font-weight: 500;
+      color: white;
+      background: linear-gradient(90deg, #004080, #0073e6);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: 0.3s ease;
+    }
+
+    .btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 10px rgba(0, 115, 230, 0.3);
+    }
+
+    /* 🔹 Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #004080;
+      border-radius: 10px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0066cc;
+    }
+
+    .upload-form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 80%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .upload-form label {
+      font-weight: bold;
+      color: #004080;
+    }
+
+    .upload-form input[type="text"],
+    .upload-form input[type="file"] {
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    .upload-form .btn {
+      background-color: #004080;
+      color: white;
+      padding: 10px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    .upload-form .btn:hover {
+      background-color: #0059b3;
+    }
+
+    .note-item {
+      background: #e6f0ff;
+      border-left: 5px solid #004080;
+      padding: 10px;
+      margin-top: 15px;
+      border-radius: 6px;
+    }
+
+    .upload-success {
+      color: #0073e6; /* bright blue */
+      font-weight: 600;
+      margin-top: 10px;
+      text-align: center;
+    }
+
+
   </style>
 </head>
+
 <body>
-  <nav>
-    <div>Priyadarshini PU College</div>
-    <div><a href="index.html" style="color:white;">Logout</a></div>
-  </nav>
+  <!-- 🔹 Top Menu -->
+  <div class="topbar">
+    <button id="attendanceBtn">📋 Attendance</button>
+    <button id="notesBtn">📝 Notes</button>
+    <button id="classesBtn">📅 Today’s Classes</button>
+    <button onclick="logout()">🚪 Logout</button>
+  </div>
 
-  <section>
-    <h2 style="text-align:center;">Mark Attendance</h2>
-    <form id="attendanceForm">
-      <table>
-        <thead>
-          <tr>
-            <th>Registration Number</th>
-            <th>Student Name</th>
-            <th>Present</th>
-          </tr>
-        </thead>
-        <tbody id="studentTableBody"></tbody>
-      </table>
-      <button type="submit" class="btn">Submit Attendance</button>
-    </form>
-  </section>
+  <!-- 🔹 Sidebar -->
+  <aside class="sidebar">
+    <div class="profile-pic"></div>
+    <h2 class="teacher-name" id="teacherName">Loading...</h2>
+    <div class="teacher-info" id="teacherInfo">
+      <b>Email:</b> —<br>
+      <b>Subject:</b> —<br>
+      <b>Qualification:</b> —<br>
+      <b>Experience:</b> —<br>
+    </div>
+  </aside>
 
-  <script>
-    // Fetch students
-    fetch("http://localhost:5000/students")
-      .then(res => res.json())
-      .then(students => {
-        const tbody = document.getElementById("studentTableBody");
-        tbody.innerHTML = "";
-        students.forEach(student => {
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td>${student.regNo}</td>
-            <td>${student.name}</td>
-            <td><input type="checkbox" id="${student._id}" checked></td>
-          `;
-          tbody.appendChild(tr);
-        });
-      })
-      .catch(err => console.error(err));
+  <!-- 🔹 Main content -->
+  <main class="main" id="contentArea">
+    <h2>Welcome to your Dashboard</h2>
+  </main>
 
-    // Submit attendance
-    document.getElementById("attendanceForm").addEventListener("submit", function(e) {
-      e.preventDefault();
-      const records = [];
-      document.querySelectorAll("input[type=checkbox]").forEach(cb => {
-        records.push({ studentId: cb.id, present: cb.checked });
-      });
-
-      fetch("http://localhost:5000/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          date: new Date().toISOString().split('T')[0],
-          records
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        if(data.error){
-          alert("Error: " + data.error);
-          return;
-        }
-        let msg = data.message + "\nAbsent students:\n";
-        data.absentStudents.forEach(s => msg += `${s.name} (${s.regNo})\n`);
-        alert(msg);
-      })
-      .catch(err => console.error(err));
-    });
-  </script>
+  <!-- External JS -->
+  <script src="teacher-dashboard.js"></script>
 </body>
 </html>

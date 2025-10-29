@@ -1,4 +1,4 @@
-require('dotenv').config({ path: 'C:/Users/Revathi/OneDrive/Documents/Enterpreneurship project/emsil.env' });
+require('dotenv').config({ path: 'C:\\Users\\shravya\\OneDrive\\Desktop\\Enterpruenership\\College_website_ep\\emsil.env' });
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -6,9 +6,9 @@ const nodemailer = require("nodemailer");
 
 const app = express();
 app.use(cors());
-app.use(express.json()); // Built-in body parser
+app.use(express.json());
 
-// ------------------- Connect MongoDB -------------------
+// ------------------- MongoDB Connection -------------------
 mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/collegeDB", {
   useNewUrlParser: true,
   useUnifiedTopology: true
@@ -17,15 +17,19 @@ mongoose.connect(process.env.MONGO_URI || "mongodb://127.0.0.1:27017/collegeDB",
 .catch(err => console.log("MongoDB connection error:", err));
 
 // ------------------- Schemas -------------------
+
+// ✅ Student Schema
 const studentSchema = new mongoose.Schema({
   name: { type: String, required: true },
   regNo: { type: String, required: true, unique: true },
-  password: { type: String, required: true }, // Add this
-  parentEmail: { type: String, required: true } // parent email
+  password: { type: String, required: true },
+  parentEmail: { type: String, required: true },
+  class: { type: String, required: true },
+  section: { type: String, required: true }
 });
 
 const attendanceSchema = new mongoose.Schema({
-  date: { type: String, required: true, unique: true }, // unique per day
+  date: { type: String, required: true, unique: true },
   records: [
     {
       studentId: { type: mongoose.Schema.Types.ObjectId, ref: "Student", required: true },
@@ -34,82 +38,62 @@ const attendanceSchema = new mongoose.Schema({
   ]
 });
 
-// ------------------- Teacher Schema -------------------
+// ✅ Teacher Schema
 const teacherSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  address: String,
+  dob: String,
+  experience: String,
+  gender: String,
+  phone: String,
+  qualification: String,
+  subject: String
 });
 
-const Teacher = mongoose.model("Teacher", teacherSchema);
+// ✅ Timetable Schema
+const timetableSchema = new mongoose.Schema({
+  class: { type: String, required: true },
+  section: { type: String, required: true },
+  timetable: { type: Object, required: true }
+});
+//notes schema
+const noteSchema = new mongoose.Schema({
+  subject: { type: String, required: true },
+  title: { type: String, required: true },
+  fileUrl: { type: String, required: true } // link to PDF file
+});
+
+const Note = mongoose.model("Note", noteSchema);
+
+
+// ------------------- Models -------------------
 const Student = mongoose.model("Student", studentSchema);
 const Attendance = mongoose.model("Attendance", attendanceSchema);
+const Teacher = mongoose.model("Teacher", teacherSchema);
+const Timetable = mongoose.model("Timetable", timetableSchema);
 
 // ------------------- Nodemailer Setup -------------------
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // Gmail address
-    pass: process.env.EMAIL_PASS  // Gmail app password
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
-// ------------------- API Routes -------------------
+// ------------------- ROUTES -------------------
 
-// Get all students
-app.get("/students", async (req, res) => {
-  try {
-    const students = await Student.find();
-    res.json(students);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Add a new student
-app.post("/students", async (req, res) => {
-  try {
-    const { name, regNo, parentEmail } = req.body;
-    if (!name || !regNo || !parentEmail) {
-      return res.status(400).json({ error: "All fields are required" });
-    }
-
-    const student = new Student({ name, regNo, parentEmail });
-    await student.save();
-    res.json({ message: "Student added successfully", student });
-  } catch (err) {
-    if (err.code === 11000) {
-      res.status(400).json({ error: "Student with this RegNo already exists" });
-    } else {
-      res.status(500).json({ error: err.message });
-    }
-  }
-});
-
-app.get("/student-attendance/:regNo", async (req, res) => {
-  const { regNo } = req.params;
-  const student = await Student.findOne({ regNo });
-  if (!student) return res.status(404).json({ error: "Student not found" });
-
-  const records = await Attendance.find({ "records.studentId": student._id });
-  const attendanceSummary = records.map(att => {
-    const studentRecord = att.records.find(r => r.studentId.toString() === student._id.toString());
-    return { date: att.date, present: studentRecord.present };
-  });
-
-  res.json({ student: { name: student.name, regNo: student.regNo }, attendance: attendanceSummary });
-});
-
+// ✅ Student Login
 app.post("/student-login", async (req, res) => {
   const { regNo, password } = req.body;
-
   if (!regNo || !password)
     return res.status(400).json({ error: "RegNo and password are required" });
 
   try {
     const student = await Student.findOne({ regNo });
     if (!student) return res.status(404).json({ error: "Student not found" });
-
     if (student.password !== password)
       return res.status(401).json({ error: "Incorrect password" });
 
@@ -118,9 +102,137 @@ app.post("/student-login", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// ✅ Fetch student profile by regNo
+app.get("/student/:regNo", async (req, res) => {
+  try {
+    const student = await Student.findOne({ regNo: req.params.regNo }).select("-password");
+    if (!student) return res.status(404).json({ error: "Student not found" });
+    res.json(student);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ✅ Fetch attendance for a student
+app.get("/student-attendance/:regNo", async (req, res) => {
+  const { regNo } = req.params;
+  const student = await Student.findOne({ regNo });
+  if (!student) return res.status(404).json({ error: "Student not found" });
+
+  const records = await Attendance.find({ "records.studentId": student._id });
+  const attendanceSummary = records.map(att => {
+    const record = att.records.find(r => r.studentId.toString() === student._id.toString());
+    return { date: att.date, present: record.present };
+  });
+
+  res.json({ student: { name: student.name, regNo: student.regNo }, attendance: attendanceSummary });
+});
 
 
 
+// ✅ Teacher Login
+app.post("/teacher-login", async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password)
+    return res.status(400).json({ error: "Email and password are required" });
+
+  try {
+    const teacher = await Teacher.findOne({ email });
+    if (!teacher) return res.status(404).json({ error: "Teacher not found" });
+    if (teacher.password !== password)
+      return res.status(401).json({ error: "Incorrect password" });
+
+    res.json({ message: "Login successful", teacher });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ------------------- TEACHER PROFILE ROUTE -------------------
+app.get("/teacher/:email", async (req, res) => {
+  try {
+    const teacher = await Teacher.findOne({ email: req.params.email }).select("-password");
+    if (!teacher) return res.status(404).json({ error: "Teacher not found" });
+    res.json(teacher);
+  } catch (err) {
+    console.error("Error fetching teacher profile:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ Attendance submission + mail alert
+app.post("/attendance", async (req, res) => {
+  try {
+    const { date, records } = req.body;
+    if (!date || !records) return res.status(400).json({ error: "Date and records are required" });
+
+    let attendance = await Attendance.findOne({ date });
+    if (attendance) {
+      attendance.records = records;
+      await attendance.save();
+    } else {
+      attendance = new Attendance({ date, records });
+      await attendance.save();
+    }
+
+    const absentStudents = await Student.find({
+      _id: { $in: records.filter(r => !r.present).map(r => r.studentId) }
+    });
+
+    for (let student of absentStudents) {
+      transporter.sendMail({
+        from: `"College Attendance" <${process.env.EMAIL_USER}>`,
+        to: student.parentEmail,
+        subject: `Attendance Alert for ${student.name}`,
+        text: `Dear Parent,\n\n${student.name} was absent on ${date}.\n\nRegards,\nPriyadarshini PU College`
+      }).catch(err => console.error("Mail error:", err.message));
+    }
+
+    res.json({ message: "Attendance submitted successfully!" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+// ✅ Fetch all notes
+app.get("/notes", async (req, res) => {
+  try {
+    const notes = await Note.find();
+    res.json(notes);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get("/student-timetable/:regNo", async (req, res) => {
+  try {
+    const { regNo } = req.params;
+    const student = await Student.findOne({ regNo });
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    const timetableDoc = await Timetable.findOne({
+      class: student.class,
+      section: student.section
+    });
+    if (!timetableDoc)
+      return res.status(404).json({ message: "No timetable found" });
+
+    const days = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+    const today = days[new Date().getDay()];
+    const periods = timetableDoc.timetable[today] || [];
+
+    res.json({
+      day: today,
+      class: student.class,
+      section: student.section,
+      periods,
+      fullTimetable: timetableDoc.timetable
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 // Submit or update attendance
 app.post("/attendance", async (req, res) => {
   try {
@@ -221,6 +333,7 @@ app.post("/teacher-login", async (req, res) => {
 
 
 
-// ------------------- Start Server -------------------
+// ------------------- Server Start -------------------
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+
