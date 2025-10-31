@@ -107,24 +107,17 @@
     <div id="attendance" class="section">
       <h2>Attendance Record</h2>
       <table>
-        <thead><tr><th>Date</th><th>Status</th></tr></thead>
-        <tbody>
-          <tr><td>2025-10-21</td><td>Present</td></tr>
-          <tr><td>2025-10-22</td><td>Present</td></tr>
-          <tr><td>2025-10-23</td><td>Absent</td></tr>
-        </tbody>
+        <thead><tr><th>Date</th><th>Subject</th><th>Status</th></tr></thead>
+        <tbody id="attendanceTable"></tbody>
       </table>
     </div>
 
     <!-- Marks -->
     <div id="marks" class="section">
-      <h2>Marks</h2>
+      <h2>Marks Record</h2>
       <table>
-        <thead><tr><th>Subject</th><th>Midterm</th><th>Final</th></tr></thead>
-        <tbody>
-          <tr><td>English</td><td>45</td><td>90</td></tr>
-          <tr><td>Maths</td><td>48</td><td>95</td></tr>
-        </tbody>
+        <thead><tr><th>Subject</th><th>Exam Type</th><th>Scored</th><th>Total</th><th>Date</th></tr></thead>
+        <tbody id="marksTable"></tbody>
       </table>
     </div>
 
@@ -255,6 +248,76 @@ async function loadStudentProfile() {
     console.error("Error:", err);
   }
 }
+// ✅ Fetch Attendance
+async function loadStudentAttendance() {
+  const regno = localStorage.getItem("studentRegNo");
+
+  try {
+    const res = await fetch(`${apiBase}/student-attendance/${regno}`);
+    const data = await res.json();
+    const table = document.getElementById("attendanceTable");
+    table.innerHTML = "";
+
+    if (!data.length) {
+      table.innerHTML = "<tr><td colspan='3'>No attendance records found</td></tr>";
+      document.getElementById("attendancePercent").textContent = "0%";
+      return;
+    }
+
+    let totalDays = 0;
+    let presentDays = 0;
+
+    data.forEach(record => {
+      record.students.forEach(student => {
+        if (student.regNo === regno) {
+          totalDays++;
+          if (student.present) presentDays++;
+
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${record.date}</td>
+            <td>${record.subject}</td>
+            <td>${student.present ? "✅ Present" : "❌ Absent"}</td>
+          `;
+          table.appendChild(row);
+        }
+      });
+    });
+
+    // ✅ Calculate percentage
+    const percentage = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
+    document.getElementById("attendancePercent").textContent = `${percentage}%`;
+
+  } catch (err) {
+    console.error("Error loading attendance:", err);
+    document.getElementById("attendancePercent").textContent = "Error";
+  }
+}
+
+// ✅ Fetch Marks
+async function loadStudentMarks() {
+  const regno = localStorage.getItem("studentRegNo");
+  const res = await fetch(`${apiBase}/student-marks/${regno}`);
+  const data = await res.json();
+  const table = document.getElementById("marksTable");
+  table.innerHTML = "";
+  if (!data.length) return (table.innerHTML = "<tr><td colspan='5'>No marks records</td></tr>");
+  
+  data.forEach(record => {
+    record.marks.forEach(m => {
+      if (m.regNo === regno) {
+        table.innerHTML += `<tr>
+          <td>${record.subject}</td>
+          <td>${record.examType}</td>
+          <td>${m.scored}</td>
+          <td>${m.total}</td>
+          <td>${record.date}</td>
+        </tr>`;
+      }
+    });
+  });
+}
+
 
 
 // ✅ Load Notes
@@ -281,7 +344,8 @@ window.onload = async () => {
   await loadStudentProfile();
   await loadStudentTimetable();
   await loadNotes();
-  calculateAttendance();
+  await loadStudentAttendance();
+  await loadStudentMarks();
 };
 
 </script>
