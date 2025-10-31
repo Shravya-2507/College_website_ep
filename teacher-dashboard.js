@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  // 🧑‍🏫 Fetch teacher details
+  // 🧑‍🏫 Load teacher details
   try {
     const res = await fetch(`http://localhost:5000/teacher/${email}`);
     const data = await res.json();
@@ -29,19 +29,41 @@ document.addEventListener("DOMContentLoaded", async () => {
       <p><b>Date of Birth:</b> ${data.dob}</p>
       <p><b>Address:</b> ${data.address}</p>
     `;
+
+    localStorage.setItem("teacherSubject", data.subject);
   } catch (err) {
     console.error("Error fetching teacher data:", err);
-    document.getElementById("teacherInfo").innerHTML = "<p>Failed to load teacher info.</p>";
   }
 
-  // 📋 Attendance Button
+  // 🔹 ATTENDANCE SECTION
   document.getElementById("attendanceBtn").addEventListener("click", async () => {
-    try {
-      const res = await fetch("http://localhost:5000/students");
+    document.getElementById("contentArea").innerHTML = `
+      <h2>📋 Mark Attendance</h2>
+      <label>Select Class:</label>
+      <select id="classSelect">
+        <option value="">-- Choose Class --</option>
+        <option value="11-A">Class 11 - A</option>
+        <option value="11-B">Class 11 - B</option>
+        <option value="12-A">Class 12 - A</option>
+        <option value="12-B">Class 12 - B</option>
+      </select>
+      <div id="studentList"></div>
+    `;
+
+    document.getElementById("classSelect").addEventListener("change", async (e) => {
+      const selected = e.target.value;
+      if (!selected) return;
+
+      const [cls, section] = selected.split("-");
+      const res = await fetch(`http://localhost:5000/classes/${cls}/${section}`);
       const students = await res.json();
 
-      const content = `
-        <h2>Mark Attendance</h2>
+      if (!students.length) {
+        document.getElementById("studentList").innerHTML = "<p>No students found.</p>";
+        return;
+      }
+
+      const formHTML = `
         <form id="attendanceForm">
           <table>
             <thead><tr><th>Reg No</th><th>Name</th><th>Present</th></tr></thead>
@@ -50,7 +72,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 <tr>
                   <td>${s.regNo}</td>
                   <td>${s.name}</td>
-                  <td><input type="checkbox" id="${s._id}" checked></td>
+                  <td><input type="checkbox" id="${s.regNo}" checked></td>
                 </tr>
               `).join('')}
             </tbody>
@@ -58,65 +80,155 @@ document.addEventListener("DOMContentLoaded", async () => {
           <button class="btn" type="submit">Submit Attendance</button>
         </form>
       `;
-      document.getElementById("contentArea").innerHTML = content;
+      document.getElementById("studentList").innerHTML = formHTML;
 
-      document.getElementById("attendanceForm").addEventListener("submit", async (e) => {
-        e.preventDefault();
+      document.getElementById("attendanceForm").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+
         const records = [];
-        document.querySelectorAll("input[type=checkbox]").forEach(cb => {
-          records.push({ studentId: cb.id, present: cb.checked });
+        students.forEach(s => {
+          const present = document.getElementById(s.regNo).checked;
+          records.push({ regNo: s.regNo, name: s.name, present });
         });
 
-        const resp = await fetch("http://localhost:5000/attendance", {
+        const response = await fetch("http://localhost:5000/attendance/mark", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            date: new Date().toISOString().split('T')[0],
-            records
-          })
+            class: cls,
+            section,
+            subject: localStorage.getItem("teacherSubject"),
+            teacherEmail: email,
+            date: new Date().toISOString().split("T")[0],
+            students: records
+          }),
         });
 
-        const result = await resp.json();
-        if (result.error) return alert(result.error);
-        alert("Attendance submitted successfully!");
+        const result = await response.json();
+        if (result.error) alert(result.error);
+        else alert("✅ Attendance marked successfully!");
       });
-    } catch (err) {
-      console.error(err);
-      alert("Failed to load students.");
-    }
+    });
   });
 
+  // 🔹 MARKS SECTION
+  document.getElementById("marksBtn").addEventListener("click", async () => {
+    document.getElementById("contentArea").innerHTML = `
+      <h2>🧮 Upload Marks</h2>
+      <label>Select Class:</label>
+      <select id="marksClassSelect">
+        <option value="">-- Choose Class --</option>
+        <option value="11-A">Class 11 - A</option>
+        <option value="11-B">Class 11 - B</option>
+        <option value="12-A">Class 12 - A</option>
+        <option value="12-B">Class 12 - B</option>
+      </select>
+      <div id="marksList"></div>
+    `;
 
-  // 📅 Today's Classes
-  document.getElementById("classesBtn").addEventListener("click", async () => {
-    try {
-      const res = await fetch(`http://localhost:5000/teacher-classes/${email}`);
-      const data = await res.json();
+    document.getElementById("marksClassSelect").addEventListener("change", async (e) => {
+      const selected = e.target.value;
+      if (!selected) return;
 
-      let html = `<h2>Today's Classes</h2>`;
-      if (!data.length) {
-        html += "<p>No classes scheduled for today.</p>";
-      } else {
-        html += `
+      const [cls, section] = selected.split("-");
+      const res = await fetch(`http://localhost:5000/classes/${cls}/${section}`);
+      const students = await res.json();
+
+      if (!students.length) {
+        document.getElementById("marksList").innerHTML = "<p>No students found.</p>";
+        return;
+      }
+
+      const formHTML = `
+        <form id="marksForm">
           <table>
-            <thead><tr><th>Subject</th><th>Class</th><th>Time</th></tr></thead>
+            <thead><tr><th>Reg No</th><th>Name</th><th>Marks</th><th>Total</th></tr></thead>
             <tbody>
-              ${data.map(c => `
+              ${students.map(s => `
                 <tr>
-                  <td>${c.subject}</td>
-                  <td>${c.className}</td>
-                  <td>${c.time}</td>
+                  <td>${s.regNo}</td>
+                  <td>${s.name}</td>
+                  <td><input type="number" id="marks-${s.regNo}" min="0" required></td>
+                  <td><input type="number" id="total-${s.regNo}" min="0" required></td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
-        `;
+          <label>Exam Type:</label><input type="text" id="examType" required>
+          <button class="btn" type="submit">Submit Marks</button>
+        </form>
+      `;
+      document.getElementById("marksList").innerHTML = formHTML;
+
+      document.getElementById("marksForm").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+        const examType = document.getElementById("examType").value.trim();
+
+        const marksArray = students.map(s => ({
+          regNo: s.regNo,
+          name: s.name,
+          scored: parseInt(document.getElementById(`marks-${s.regNo}`).value),
+          total: parseInt(document.getElementById(`total-${s.regNo}`).value)
+        }));
+
+        const response = await fetch("http://localhost:5000/marks/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            class: cls,
+            section,
+            subject: localStorage.getItem("teacherSubject"),
+            teacherEmail: email,
+            examType,
+            marks: marksArray
+          }),
+        });
+
+        const result = await response.json();
+        if (result.error) alert(result.error);
+        else alert("✅ Marks uploaded successfully!");
+      });
+    });
+  });
+
+  // 📝 NOTES UPLOAD SECTION (unchanged)
+  document.getElementById("notesBtn").addEventListener("click", () => {
+    document.getElementById("contentArea").innerHTML = `
+      <h2>Upload Notes</h2>
+      <form id="uploadForm" class="upload-form">
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" placeholder="Enter subject name" required>
+
+        <label for="fileUpload">Choose File</label>
+        <input type="file" id="fileUpload" accept=".pdf,.docx,.pptx,.txt" required>
+
+        <button type="submit" class="btn">Upload</button>
+      </form>
+      <div id="uploadedNotes"></div>
+    `;
+
+    const uploadForm = document.getElementById("uploadForm");
+    uploadForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const subject = document.getElementById("subject").value.trim();
+      const file = document.getElementById("fileUpload").files[0];
+
+      if (!file) {
+        alert("Please select a file.");
+        return;
       }
-      document.getElementById("contentArea").innerHTML = html;
-    } catch (err) {
-      console.error(err);
-      alert("Error loading today's classes.");
-    }
+
+      const uploadedNotesDiv = document.getElementById("uploadedNotes");
+      const noteItem = document.createElement("div");
+      noteItem.classList.add("note-item");
+      noteItem.innerHTML = `
+        <p class="upload-success"><strong>Subject:</strong> ${subject}</p>
+        <p class="upload-success"><strong>File:</strong> ${file.name}</p>
+        <p class="upload-success">✅ Successfully uploaded!</p>
+      `;
+      uploadedNotesDiv.appendChild(noteItem);
+      uploadForm.reset();
+    });
   });
 });
 
@@ -125,47 +237,3 @@ function logout() {
   localStorage.removeItem("teacherEmail");
   window.location.href = "login.html";
 }
-
-document.getElementById("notesBtn").addEventListener("click", () => {
-  document.getElementById("contentArea").innerHTML = `
-    <h2>Upload Notes</h2>
-    <form id="uploadForm" class="upload-form">
-      <label for="subject">Subject</label>
-      <input type="text" id="subject" placeholder="Enter subject name" required>
-
-      <label for="fileUpload">Choose File</label>
-      <input type="file" id="fileUpload" accept=".pdf,.docx,.pptx,.txt" required>
-
-      <button type="submit" class="btn">Upload</button>
-    </form>
-
-    <div id="uploadedNotes"></div>
-  `;
-
-  // Handle form submission
-  const uploadForm = document.getElementById("uploadForm");
-  uploadForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-
-    const subject = document.getElementById("subject").value.trim();
-    const file = document.getElementById("fileUpload").files[0];
-
-    if (!file) {
-      alert("Please select a file to upload.");
-      return;
-    }
-
-    // Create uploaded note preview
-    const uploadedNotesDiv = document.getElementById("uploadedNotes");
-    const noteItem = document.createElement("div");
-    noteItem.classList.add("note-item");
-    noteItem.innerHTML = `
-      <p class="upload-success"><strong>Subject:</strong> <span class="note-text">${subject}</span></p>
-      <p class="upload-success"><strong>File:</strong> <span class="note-text">${file.name}</span></p>
-      <p class="upload-success">✅ Successfully uploaded!</p>
-    `;
-
-    uploadedNotesDiv.appendChild(noteItem);
-    uploadForm.reset();
-  });
-});
