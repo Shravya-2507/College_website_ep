@@ -20,50 +20,13 @@
       overflow: hidden;
     }
 
-    /* 🔹 Topbar */
-    .topbar {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 65px;
-      background: linear-gradient(90deg, #004080, #0073e6);
-      color: white;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 50px;
-      z-index: 10;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-    }
-
-    .topbar button {
-      background: transparent;
-      border: none;
-      color: white;
-      font-size: 17px;
-      font-weight: 500;
-      cursor: pointer;
-      padding: 10px 20px;
-      transition: 0.3s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .topbar button:hover {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 8px;
-      transform: scale(1.05);
-    }
-
     /* 🔹 Sidebar */
     .sidebar {
       position: fixed;
-      top: 65px;
+      top: 0;
       left: 0;
       bottom: 0;
-      width: 280px;
+      width: 270px;
       background: #002b5b;
       color: white;
       padding: 25px 20px;
@@ -101,17 +64,42 @@
       line-height: 1.6;
       text-align: left;
       box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
     }
 
     .teacher-info b {
       color: #aad4ff;
     }
 
+    /* 🔹 Sidebar Buttons */
+    .sidebar button {
+      width: 100%;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 16px;
+      font-weight: 500;
+      text-align: left;
+      padding: 12px 15px;
+      border-radius: 8px;
+      margin: 5px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: 0.3s;
+    }
+
+    .sidebar button:hover, 
+    .sidebar button.active {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateX(5px);
+    }
+
     /* 🔹 Main content */
     .main {
       flex: 1;
-      margin-left: 280px;
-      margin-top: 65px;
+      margin-left: 270px;
       padding: 40px;
       overflow-y: auto;
       background: #f7faff;
@@ -125,10 +113,28 @@
       letter-spacing: 0.5px;
     }
 
-    p {
-      font-size: 16px;
-      color: #f6ea7e;
+    /* 🔹 Profile Card (Right side display) */
+    .profile-card {
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 25px 35px;
+      width: 420px;
+      line-height: 1.8;
+      color: #333;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin: 40px auto;
+      border-left: 6px solid #004080;
+    }
+
+    .profile-card h3 {
+      color: #004080;
       margin-bottom: 15px;
+      font-size: 22px;
+    }
+
+    .profile-card p {
+      font-size: 15px;
+      margin: 6px 0;
     }
 
     /* 🔹 Tables */
@@ -159,7 +165,7 @@
       background-color: #f0f6ff;
     }
 
-    /* 🔹 Buttons */
+    /* 🔹 Buttons general */
     .btn {
       display: inline-block;
       margin: 20px auto;
@@ -239,41 +245,80 @@
     }
 
     .upload-success {
-      color: #0073e6; /* bright blue */
+      color: #0073e6;
       font-weight: 600;
       margin-top: 10px;
       text-align: center;
     }
-
-
   </style>
 </head>
 
 <body>
-  <!-- 🔹 Top Menu -->
-  <div class="topbar">
+  <!-- 🔹 Sidebar -->
+  <aside class="sidebar">
+  
+
+
+    <!-- 🔹 Navigation Buttons -->
+    <button id="profilebtn">👤 Profile</button>
     <button id="attendanceBtn">📋 Attendance</button>
     <button id="marksBtn">🧮 Marks</button>
     <button id="notesBtn">📝 Notes</button>
-    <button id="classesBtn">📅 Today’s Classes</button>
+    <button id="classesBtn">📅 Time Table</button>
+    <button id="syllabusBtn">📚 Syllabus</button>
     <button onclick="logout()">🚪 Logout</button>
-  </div>
-
-  <!-- 🔹 Sidebar -->
-  <aside class="sidebar">
-    <div class="profile-pic"></div>
-    <h2 class="teacher-name" id="teacherName">Loading...</h2>
-    <div class="teacher-info" id="teacherInfo">
-      <b>Email:</b> —<br>
-      <b>Subject:</b> —<br>
-      <b>Qualification:</b> —<br>
-      <b>Experience:</b> —<br>
-    </div>
   </aside>
 
   <!-- 🔹 Main content -->
   <main class="main" id="contentArea">
     <h2>Welcome to your Dashboard</h2>
+
+    <!-- Placeholder where teacher details will appear -->
+    <div id="teacherProfile" class="profile-card" style="display:none;">
+      <h3>Priya Sharma</h3>
+      <p><b>Email:</b> priya@college.com</p>
+      <p><b>Subject:</b> Mathematics</p>
+      <p><b>Qualification:</b> M.Sc in Mathematics</p>
+      <p><b>Experience:</b> 8 years</p>
+      <p><b>Phone:</b> 9876543210</p>
+      <p><b>Gender:</b> Female</p>
+      <p><b>Date of Birth:</b> 1986-04-12</p>
+      <p><b>Address:</b> Bangalore, India</p>
+    </div>
+    <!-- 🔹 Syllabus Tracking Section -->
+<div id="syllabusSection" style="display:none;">
+  <h2>Syllabus Progress Tracker</h2>
+
+  <div class="upload-form">
+    <label for="classSelect">Select Class:</label>
+    <select id="classSelect">
+      <option value="">-- Select Class --</option>
+      <option value="11">Class 11</option>
+      <option value="12">Class 12</option>
+    </select>
+
+    <label for="subjectSelect">Select Subject:</label>
+    <select id="subjectSelect">
+      <option value="">-- Select Subject --</option>
+    </select>
+  </div>
+
+  <table id="syllabusTable">
+    <thead>
+      <tr>
+        <th>Topic</th>
+        <th>Subtopic</th>
+        <th>Hours</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="syllabusBody">
+      <tr><td colspan="5">Select class and subject to view syllabus</td></tr>
+    </tbody>
+  </table>
+</div>
+
   </main>
 
   <!-- External JS -->
