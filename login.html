@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login - Priyadarshini PU College</title>
   <link rel="stylesheet" href="style.css">
+
+  <!-- Font Awesome for Eye Icon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
   <!-- Navigation Bar -->
@@ -47,17 +50,44 @@
           <input type="email" id="email" placeholder="Enter your Email">
         </div>
 
-        <!-- Password Field (Hidden Initially) -->
-        <div class="input-group password-field" style="display:none;">
-        <label for="password">Password</label>
-        <input type="password" id="password" placeholder="Enter Password">
+        <!-- Password Field -->
+        <div class="input-group password-field" style="display:none; position: relative;">
+          <label for="password">Password</label>
+          <input type="password" id="password" placeholder="Enter Password">
+          <i id="togglePassword" class="fa-solid fa-eye"
+             style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: #555;"></i>
         </div>
 
-
         <button type="submit" class="btn">Login</button>
+
+        <!-- Forgot Password Link (Hidden until role selected) -->
+        <p class="forgot-link" id="forgotPasswordContainer" style="display:none;">
+          <a href="#" id="forgotPasswordLink">Forgot Password?</a>
+        </p>
       </form>
     </div>
   </section>
+
+  
+  <!-- Forgot Password Modal -->
+<div id="forgotModal" class="modal">
+  <div class="modal-content">
+    <span id="closeModal" class="close">&times;</span>
+    <h3>Reset Password</h3>
+    <form id="resetForm">
+      <!-- Removed the identifier field since user is already logged in -->
+      
+      <label for="newPassword">New Password</label>
+      <input type="password" id="newPassword" placeholder="Enter New Password" required>
+
+      <label for="confirmPassword">Confirm Password</label>
+      <input type="password" id="confirmPassword" placeholder="Confirm New Password" required>
+
+      <button type="submit" class="btn">Update Password</button>
+    </form>
+  </div>
+</div>
+
 
   <script src="login.js"></script>
 </body>
