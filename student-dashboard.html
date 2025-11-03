@@ -5,73 +5,287 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Student Dashboard</title>
   <style>
-    /* --- existing CSS unchanged --- */
     body {
       font-family: 'Poppins', sans-serif;
       margin: 0;
       background-color: #f8fafc;
       display: flex;
     }
-    .sidebar { width: 230px; background-color: #1e3a8a; color: white; height: 100vh; padding: 20px; }
-    .sidebar h2 { text-align: center; margin-bottom: 30px; }
-    .sidebar a { display: block; color: white; text-decoration: none; padding: 10px 15px; border-radius: 8px; margin-bottom: 10px; transition: 0.3s; }
-    .sidebar a:hover, .sidebar a.active { background-color: #3b82f6; }
-    .content { flex-grow: 1; padding: 30px; position: relative; }
-    .back-home { position: absolute; top: 20px; right: 20px; background-color: #1e3a8a; color: white; border: none; padding: 10px 18px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.3s; }
-    .back-home:hover { background-color: #3b82f6; }
-    .attendance-summary { background-color: #fef3c7; border-left: 6px solid #facc15; padding: 20px; border-radius: 12px; margin-bottom: 30px; width: 300px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .attendance-summary h3 { color: #92400e; margin-bottom: 8px; }
-    .attendance-summary p { font-size: 28px; color: #92400e; font-weight: 700; }
-    h2 { color: #1e3a8a; margin-bottom: 20px; }
-    table { width: 100%; border-collapse: collapse; background-color: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    th, td { padding: 12px; text-align: center; border-bottom: 1px solid #e5e7eb; }
-    th { background-color: #e0e7ff; color: #1e3a8a; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 230px;
+      background-color: #1e3a8a;
+      color: white;
+      height: 100vh;
+      padding: 20px;
+    }
+    .sidebar h2 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .sidebar a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      transition: 0.3s;
+    }
+    .sidebar a:hover,
+    .sidebar a.active {
+      background-color: #3b82f6;
+    }
+
+    /* Content Area */
+    .content {
+      flex-grow: 1;
+      padding: 30px;
+      position: relative;
+      overflow-y: auto;
+      height: 100vh;
+    }
+
+    .back-home {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background-color: #1e3a8a;
+      color: white;
+      border: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .back-home:hover {
+      background-color: #3b82f6;
+    }
+
+    /* Profile Section */
+    #profile h2 {
+      text-align: center;
+      color: #1e3a8a;
+      font-size: 24px;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+
+    #profileCard {
+      background-color: #ffffff;
+      border-radius: 16px;
+      padding: 30px 35px;
+      max-width: 520px;
+      margin: 0 auto;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      transition: 0.3s ease;
+    }
+
+    #profileCard:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+    }
+
+    #profileCard img#profilePhoto {
+      display: block;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #1e3a8a;
+      margin: 0 auto 15px auto;
+      transition: all 0.3s ease;
+    }
+
+    #profileCard img#profilePhoto:hover {
+      transform: scale(1.05);
+    }
+
+    #profileCard label {
+      display: block;
+      color: #1e3a8a;
+      font-weight: 600;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    #profileCard input[type="file"] {
+      display: block;
+      margin-top: 6px;
+      margin-bottom: 12px;
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background-color: #f8fafc;
+      font-size: 14px;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    #profileCard input[type="file"]:hover {
+      border-color: #3b82f6;
+    }
+
+    #profileCard p {
+      color: #374151;
+      margin: 6px 0;
+      font-size: 15px;
+      line-height: 1.5;
+    }
+
+    #profileCard p b {
+      color: #1e3a8a;
+    }
+
+    #marksFileLink {
+      color: #2563eb;
+      font-weight: 500;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #marksFileLink:hover {
+      color: #1d4ed8;
+    }
+
+    #profileCard hr {
+      border: 0;
+      height: 1px;
+      background: #e5e7eb;
+      margin: 15px 0;
+    }
+
+    /* Other Sections */
     .section { display: none; }
     .active-section { display: block; }
-    .today-schedule { margin-top: 20px; background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+    .attendance-summary {
+      background-color: #fef3c7;
+      border-left: 6px solid #facc15;
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+      width: 300px;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .attendance-summary h3 { color: #92400e; margin-bottom: 8px; }
+    .attendance-summary p { font-size: 28px; color: #92400e; font-weight: 700; }
+
+    h2 { color: #1e3a8a; margin-bottom: 20px; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    th {
+      background-color: #e0e7ff;
+      color: #1e3a8a;
+    }
+
+    .today-schedule {
+      margin-top: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
     .today-schedule h3 { color: #1e3a8a; margin-bottom: 15px; }
     .today-schedule ul { list-style: none; padding: 0; }
-    .today-schedule li { padding: 10px 0; border-bottom: 1px solid #e5e7eb; font-weight: 500; color: #374151; }
+    .today-schedule li {
+      padding: 10px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-weight: 500;
+      color: #374151;
+    }
+
     #notesList a { color: #1e3a8a; text-decoration: none; font-weight: 500; }
     #notesList a:hover { text-decoration: underline; color: #2563eb; }
+
+    /* Academic Calendar */
+    #academic-calendar select {
+      padding: 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 15px;
+    }
+    #calendarContainer {
+      overflow-x: auto;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      #profileCard {
+        width: 90%;
+        padding: 20px;
+      }
+      #profileCard img#profilePhoto {
+        width: 100px;
+        height: 100px;
+      }
+    }
   </style>
 </head>
+
 <body>
   <div class="sidebar">
     <h2>Student Panel</h2>
-    <a href="#" onclick="showSection('profile', this)">Profile</a>
-    <a href="#" class="active" onclick="showSection('dashboard', this)">Dashboard</a>
+    <a href="#" class="active" onclick="showSection('profile', this)">Profile</a>
+    <a href="#" onclick="showSection('dashboard', this)">Dashboard</a>
     <a href="#" onclick="showSection('attendance', this)">Attendance</a>
     <a href="#" onclick="showSection('marks', this)">Marks</a>
     <a href="#" onclick="showSection('notes', this)">Notes</a>
     <a href="#" onclick="showSection('timetable', this)">Timetable</a>
+    <a href="#" onclick="showSection('academic-calendar', this)">Academic Calendar</a>
     <a href="#" onclick="showSection('facilities', this)">Facilities</a>
   </div>
 
   <div class="content">
     <button class="back-home" onclick="window.location.href='index.html'">← Back to Home</button>
 
-    <!-- Profile -->
-<div id="profile" class="section">
-  <h2>Student Profile</h2>
-  <div id="profileCard" style="
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    width: 400px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  ">
-    <p><b>Name:</b> <span id="profileName">Loading...</span></p>
-    <p><b>Register No:</b> <span id="profileRegNo">Loading...</span></p>
-    <p><b>Class:</b> <span id="profileClass">Loading...</span></p>
-    <p><b>Section:</b> <span id="profileSection">Loading...</span></p>
-    <p><b>Parent Email:</b> <span id="profileParentEmail">Loading...</span></p>
-  </div>
-</div>
-
+    <!-- ✅ Profile -->
+    <div id="profile" class="section active-section">
+      <h2>Student Profile</h2>
+      <div id="profileCard">
+        <img id="profilePhoto" src="default-profile.png" alt="Profile Photo">
+        <label>Upload New Profile Photo:</label>
+        <input type="file" id="photoUpload" accept="image/*" onchange="uploadProfilePhoto(event)" />
+        <label>Upload 10th Marks File:</label>
+        <input type="file" id="marksUpload" accept=".pdf,.jpg,.png" onchange="uploadTenthMarks(event)" />
+        <p><b>10th Marks Card:</b> <span id="marksFileLink">No file uploaded</span></p>
+        <hr>
+        <p><b>Name:</b> <span id="profileName">Loading...</span></p>
+        <p><b>Register No:</b> <span id="profileRegNo">Loading...</span></p>
+        <p><b>Class:</b> <span id="profileClass">Loading...</span></p>
+        <p><b>Section:</b> <span id="profileSection">Loading...</span></p>
+        <p><b>Parent Email:</b> <span id="profileParentEmail">Loading...</span></p>
+        <hr>
+        <p><b>Date of Birth:</b> <span id="profileDob">Loading...</span></p>
+        <p><b>Gender:</b> <span id="profileGender">Loading...</span></p>
+        <hr>
+        <p><b>Father's Name:</b> <span id="fatherName">Loading...</span></p>
+        <p><b>Father's Contact:</b> <span id="fatherContact">Loading...</span></p>
+        <p><b>Mother's Name:</b> <span id="motherName">Loading...</span></p>
+        <p><b>Mother's Contact:</b> <span id="motherContact">Loading...</span></p>
+        <hr>
+        <p><b>Address:</b> <span id="address">Loading...</span></p>
+      </div>
+    </div>
 
     <!-- Dashboard -->
-    <div id="dashboard" class="section active-section">
+    <div id="dashboard" class="section">
       <div class="attendance-summary">
         <h3>Overall Attendance</h3>
         <p id="attendancePercent">92%</p>
@@ -127,6 +341,27 @@
       <ul id="notesList"><li>Loading notes...</li></ul>
     </div>
 
+    <!-- ✅ Academic Calendar -->
+    <div id="academic-calendar" class="section">
+      <h2>Academic Calendar 2025–26</h2>
+      <label for="monthSelect"><b>Select Month:</b></label>
+      <select id="monthSelect" onchange="renderCalendar()">
+        <option value="6">June 2025</option>
+        <option value="7">July 2025</option>
+        <option value="8">August 2025</option>
+        <option value="9">September 2025</option>
+        <option value="10">October 2025</option>
+        <option value="11">November 2025</option>
+        <option value="12">December 2025</option>
+        <option value="1">January 2026</option>
+        <option value="2">February 2026</option>
+        <option value="3">March 2026</option>
+        <option value="4">April 2026</option>
+        <option value="5">May 2026</option>
+      </select>
+      <div id="calendarContainer"></div>
+    </div>
+
     <!-- Facilities -->
     <div id="facilities" class="section">
       <h2>Facilities</h2>
@@ -137,217 +372,6 @@
     </div>
   </div>
 
-<script>
-const apiBase = "http://localhost:5000";
-
-// Sidebar navigation
-function showSection(sectionId, element) {
-  document.querySelectorAll(".section").forEach(sec => sec.classList.remove("active-section"));
-  document.getElementById(sectionId).classList.add("active-section");
-  document.querySelectorAll(".sidebar a").forEach(a => a.classList.remove("active"));
-  element.classList.add("active");
-}
-
-// ✅ Attendance percentage calculation
-function calculateAttendance() {
-  const rows = document.querySelectorAll("#attendance tbody tr");
-  let present = 0, total = 0;
-  rows.forEach(row => {
-    const status = row.cells[1].textContent.trim().toLowerCase();
-    if (status === "present") present++;
-    total++;
-  });
-  const percent = total ? ((present / total) * 100).toFixed(2) : 0;
-  document.getElementById("attendancePercent").textContent = percent + "%";
-}
-
-// ✅ Fetch timetable from backend
-async function loadStudentTimetable() {
-  const regno = localStorage.getItem("studentRegNo");
-  if (!regno) {
-    alert("Please log in again — missing register number!");
-    window.location.href = "login.html";
-    return;
-  }
-
-  try {
-    const res = await fetch(`${apiBase}/student-timetable/${regno}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Error fetching timetable:", data);
-      document.getElementById("todayPeriods").innerHTML = `<li>No timetable found</li>`;
-      document.getElementById("timetableBody").innerHTML = `<tr><td colspan="8">No timetable data</td></tr>`;
-      return;
-    }
-
-    // ✅ Update today's schedule
-    document.getElementById("todayName").textContent = data.day;
-    const todayList = document.getElementById("todayPeriods");
-    todayList.innerHTML = "";
-
-    if (!data.periods || data.periods.length === 0) {
-      todayList.innerHTML = `<li>No classes scheduled today.</li>`;
-    } else {
-      data.periods.forEach(p => {
-        if (typeof p === "string") todayList.innerHTML += `<li>${p}</li>`;
-        else todayList.innerHTML += `<li>${p.time || ""} — <b>${p.subject}</b></li>`;
-      });
-    }
-
-    
-    // ✅ Weekly timetable
-    const tableBody = document.getElementById("timetableBody");
-    tableBody.innerHTML = "";
-
-    const daysOrder = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-    daysOrder.forEach(day => {
-      const periods = data.fullTimetable[day] || [];
-      let row = `<tr><td>${day}</td>`;
-      for (let i = 0; i < 7; i++) {
-        const p = periods[i];
-        if (!p) row += `<td>-</td>`;
-        else if (typeof p === "string") row += `<td>${p}</td>`;
-        else row += `<td><b>${p.subject}</b><br><small>${p.time || ""}</small></td>`;
-      }
-      row += "</tr>";
-      tableBody.innerHTML += row;
-    });
-
-  } catch (err) {
-    console.error("Error:", err);
-    document.getElementById("todayPeriods").innerHTML = `<li>Error fetching schedule</li>`;
-  }
-}
-// ✅ Load student profile
-async function loadStudentProfile() {
-  const regno = localStorage.getItem("studentRegNo");
-  if (!regno) {
-    alert("Please log in again — missing register number!");
-    window.location.href = "login.html";
-    return;
-  }
-
-  try {
-    const res = await fetch(`${apiBase}/student/${regno}`);
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.error("Error fetching profile:", data);
-      return;
-    }
-
-    // Fill profile details
-    document.getElementById("profileName").textContent = data.name;
-    document.getElementById("profileRegNo").textContent = data.regNo;
-    document.getElementById("profileClass").textContent = data.class;
-    document.getElementById("profileSection").textContent = data.section;
-    document.getElementById("profileParentEmail").textContent = data.parentEmail;
-
-  } catch (err) {
-    console.error("Error:", err);
-  }
-}
-// ✅ Fetch Attendance
-async function loadStudentAttendance() {
-  const regno = localStorage.getItem("studentRegNo");
-
-  try {
-    const res = await fetch(`${apiBase}/student-attendance/${regno}`);
-    const data = await res.json();
-    const table = document.getElementById("attendanceTable");
-    table.innerHTML = "";
-
-    if (!data.length) {
-      table.innerHTML = "<tr><td colspan='3'>No attendance records found</td></tr>";
-      document.getElementById("attendancePercent").textContent = "0%";
-      return;
-    }
-
-    let totalDays = 0;
-    let presentDays = 0;
-
-    data.forEach(record => {
-      record.students.forEach(student => {
-        if (student.regNo === regno) {
-          totalDays++;
-          if (student.present) presentDays++;
-
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${record.date}</td>
-            <td>${record.subject}</td>
-            <td>${student.present ? "✅ Present" : "❌ Absent"}</td>
-          `;
-          table.appendChild(row);
-        }
-      });
-    });
-
-    // ✅ Calculate percentage
-    const percentage = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
-    document.getElementById("attendancePercent").textContent = `${percentage}%`;
-
-  } catch (err) {
-    console.error("Error loading attendance:", err);
-    document.getElementById("attendancePercent").textContent = "Error";
-  }
-}
-
-// ✅ Fetch Marks
-async function loadStudentMarks() {
-  const regno = localStorage.getItem("studentRegNo");
-  const res = await fetch(`${apiBase}/student-marks/${regno}`);
-  const data = await res.json();
-  const table = document.getElementById("marksTable");
-  table.innerHTML = "";
-  if (!data.length) return (table.innerHTML = "<tr><td colspan='5'>No marks records</td></tr>");
-  
-  data.forEach(record => {
-    record.marks.forEach(m => {
-      if (m.regNo === regno) {
-        table.innerHTML += `<tr>
-          <td>${record.subject}</td>
-          <td>${record.examType}</td>
-          <td>${m.scored}</td>
-          <td>${m.total}</td>
-          <td>${record.date}</td>
-        </tr>`;
-      }
-    });
-  });
-}
-
-
-
-// ✅ Load Notes
-async function loadNotes() {
-  try {
-    const res = await fetch(`${apiBase}/notes`);
-    const notes = await res.json();
-    const notesList = document.getElementById("notesList");
-    notesList.innerHTML = "";
-    if (!notes.length) notesList.innerHTML = "<li>No notes available</li>";
-    else notes.forEach(note => {
-      const li = document.createElement("li");
-      li.innerHTML = `<a href="${note.fileUrl}" target="_blank">${note.subject} - ${note.title}</a>`;
-      notesList.appendChild(li);
-    });
-  } catch (err) {
-    document.getElementById("notesList").innerHTML = "<li>Error loading notes</li>";
-  }
-}
-
-// ✅ On load
-
-window.onload = async () => {
-  await loadStudentProfile();
-  await loadStudentTimetable();
-  await loadNotes();
-  await loadStudentAttendance();
-  await loadStudentMarks();
-};
-
-</script>
+  <script src="student-dashboard.js"></script>
 </body>
 </html>
