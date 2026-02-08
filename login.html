@@ -14,13 +14,13 @@
   <nav class="navbar">
     <div class="nav-left">
       <img src="college-logo.png" alt="College Logo" class="logo">
-      <span class="college-name">Priyadarshini PU College</span>
+      <span class="college-name">Priyadarshini Junior College</span>
     </div>
     <div class="nav-right">
       <a href="index.html">Home</a>
       <a href="login.html" class="active">Login</a>
-      <a href="#">Details</a>
-      <a href="#contact">Contact</a>
+      <a href="details.html">Details</a>
+      <a href="contact.html">Contact</a>
     </div>
   </nav>
 
@@ -33,10 +33,18 @@
           <label for="role">Login as</label>
           <select id="role" required>
             <option value="">Select Role</option>
+            <option value="admin">Admin</option>
             <option value="student">Student</option>
             <option value="teacher">Teacher</option>
           </select>
         </div>
+        
+        <!-- Admin Email -->
+        <div class="input-group admin-field" style="display:none;">
+          <label for="adminEmail">Admin Email</label>
+          <input type="email" id="adminEmail" placeholder="Enter Admin Email">
+        </div>
+
 
         <!-- Student Registration Number -->
         <div class="input-group student-field" style="display:none;">
@@ -70,16 +78,32 @@
 
   
   <!-- Forgot Password Modal -->
+<!-- Forgot Password Modal (Secure OTP Version) -->
 <div id="forgotModal" class="modal">
   <div class="modal-content">
     <span id="closeModal" class="close">&times;</span>
-    <h3>Reset Password</h3>
+    <h3>Reset Password (Secure OTP)</h3>
+
     <form id="resetForm">
-      <!-- Removed the identifier field since user is already logged in -->
-      
+
+      <p style="font-size: 14px; color: #555; margin-bottom: 10px;">
+        Enter your details, click <b>Send OTP</b>, then check your registered email.
+      </p>
+
+      <!-- OTP Request -->
+      <button type="button" id="sendOtpBtn" class="btn" style="margin-bottom: 10px;">
+        Send OTP
+      </button>
+
+      <!-- OTP Input -->
+      <label for="otp">Enter OTP</label>
+      <input type="text" id="otp" placeholder="Enter 6-digit OTP" maxlength="6" required>
+
+      <!-- New Password -->
       <label for="newPassword">New Password</label>
       <input type="password" id="newPassword" placeholder="Enter New Password" required>
 
+      <!-- Confirm Password -->
       <label for="confirmPassword">Confirm Password</label>
       <input type="password" id="confirmPassword" placeholder="Confirm New Password" required>
 
