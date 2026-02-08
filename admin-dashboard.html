@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Dashboard</title>
+<style>
+/* ===== GENERAL STYLES ===== */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+  display: flex;
+  height: 100vh;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 250px;
+  background: #2c3e50;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding-top: 20px;
+}
+
+.sidebar h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  font-size: 22px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  padding-bottom: 15px;
+}
+
+.sidebar button {
+  background: none;
+  border: none;
+  color: white;
+  padding: 15px 20px;
+  text-align: left;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.sidebar button:hover {
+  background: #1a252f;
+}
+
+.logout-btn {
+  background: #e74c3c !important;
+  margin-top: auto;
+}
+
+.logout-btn:hover {
+  background: #c0392b !important;
+}
+
+/* ===== CONTENT AREA ===== */
+.content {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+/* ===== SECTION DISPLAY ===== */
+.section {
+  display: none;
+}
+
+.active-section {
+  display: block;
+}
+
+/* ===== FORM STYLING ===== */
+form label {
+  font-weight: bold;
+  display: block;
+  margin-top: 10px;
+}
+
+form input,
+form select,
+form textarea {
+  width: 100%;
+  padding: 10px;
+  margin: 5px 0 15px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+form button {
+  padding: 10px 20px;
+  background: #2980b9;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+form button:hover {
+  background: #1f5f8b;
+}
+
+/* ===== SUCCESS / ERROR MESSAGES ===== */
+.success,
+.error {
+  padding: 12px;
+  border-radius: 5px;
+  margin-bottom: 15px;
+  display: none;
+}
+
+.success {
+  background: #2ecc71;
+  color: white;
+}
+
+.error {
+  background: #e74c3c;
+  color: white;
+}
+
+/* ===== TABLE STYLING ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  margin-top: 20px;
+}
+
+table th,
+table td {
+  border: 1px solid #ddd;
+  padding: 12px;
+  text-align: center;
+}
+
+table th {
+  background: #2c3e50;
+  color: white;
+}
+
+button.edit-btn {
+  background: #2980b9;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button.edit-btn:hover {
+  background: #1f5f8b;
+}
+
+button.del-btn {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+button.del-btn:hover {
+  background: #c0392b;
+}
+
+/* ===== EDIT POPUP ===== */
+/* ===== EDIT POPUP ===== */
+#editPopup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+
+  width: 380px;
+  max-height: 80vh;        /* ✅ limit height */
+  overflow-y: auto;        /* ✅ enable scroll */
+
+  z-index: 999;
+}
+
+#editTeacherPopup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+
+  width: 380px;
+  max-height: 80vh;        /* ✅ limit height */
+  overflow-y: auto;        /* ✅ enable scroll */
+
+  z-index: 999;
+}
+
+/* Optional: smoother scrolling */
+#editPopup {
+  scrollbar-width: thin;
+}
+
+#editTeacherPopup {
+  scrollbar-width: thin;
+}
+
+/* Title */
+#editPopup h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  position: sticky;        /* optional */
+  top: 0;
+  background: white;
+  padding-bottom: 10px;
+}
+
+#editTeacherPopup h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  position: sticky;        /* optional */
+  top: 0;
+  background: white;
+  padding-bottom: 10px;
+}
+
+/* Labels */
+#editPopup label {
+  font-weight: bold;
+}
+
+#editTeacherPopup label {
+  font-weight: bold;
+}
+
+/* Inputs */
+#editPopup input,
+#editPopup select,
+#editPopup textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0 15px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#editTeacherPopup input,
+#editTeacherPopup select,
+#editTeacherPopup textarea {
+  width: 100%;
+  padding: 8px;
+  margin: 8px 0 15px 0;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Buttons */
+#editPopup button {
+  padding: 8px 15px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#editTeacherPopup button {
+  padding: 8px 15px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* Save */
+#editPopup button:first-of-type {
+  background: #27ae60;
+  color: white;
+}
+
+#editPopup button:first-of-type:hover {
+  background: #1f8f4f;
+}
+
+#editTeacherPopup button:first-of-type {
+  background: #27ae60;
+  color: white;
+}
+
+#editTeacherPopup button:first-of-type:hover {
+  background: #1f8f4f;
+}
+
+/* Cancel */
+#editPopup button:last-of-type {
+  background: #e74c3c;
+  color: white;
+}
+
+#editPopup button:last-of-type:hover {
+  background: #c0392b;
+}
+
+#editTeacherPopup button:last-of-type {
+  background: #e74c3c;
+  color: white;
+}
+
+#editTeacherPopup button:last-of-type:hover {
+  background: #c0392b;
+}
+
+/* 📱 Mobile friendly */
+@media (max-width: 480px) {
+  #editPopup {
+    width: 90%;
+    max-height: 85vh;
+  }
+
+  #editTeacherPopup {
+    width: 90%;
+    max-height: 85vh;
+  }
+}
+
+#timetableDisplay table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+#timetableDisplay th, #timetableDisplay td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: center;
+}
+
+#timetableDisplay th {
+  background: #3498db;
+  color: white;
+}
+
+#timetableDisplay tr:nth-child(even) {
+  background: #f2f2f2;
+}
+#editTimetablePopup {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.3);
+  width: 380px;
+  max-height: 80vh;
+  overflow-y: auto;
+  z-index: 999;
+}
+
+#editTimetablePopup input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+#editTimetablePopup button:first-of-type {
+  background: #27ae60;
+  color: white;
+  padding: 8px 15px;
+  margin-right: 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+#editTimetablePopup button:last-of-type {
+  background: #e74c3c;
+  color: white;
+  padding: 8px 15px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>Admin Panel</h2>
+  <button onclick="showSection('students')">Students</button>
+  <button onclick="showSection('teachers')">Teachers</button>
+  <button onclick="showSection('timetable')">Timetable</button>
+  <button class="logout-btn" onclick="logout()">Logout</button>
+</div>
+
+<div class="content">
+  <div id="home" class="section active-section">
+    <h1>Welcome, Admin</h1>
+    <p>Select an action from the left menu.</p>
+  </div>
+
+  <!-- STUDENTS SECTION -->
+  <div id="students" class="section">
+    <h1>Add New Student</h1>
+    <div class="success" id="successBox">Student added successfully!</div>
+    <div class="error" id="errorBox">Something went wrong!</div>
+
+    <form id="addStudentForm">
+  <label style="margin-top: 0;">Name</label>
+  <input type="text" id="s_name" name="name" placeholder="Enter student name" required>
+
+  <label>Register Number</label>
+  <input type="text" id="s_reg" name="regNo" placeholder="Enter register number" required>
+
+  <label>Class</label>
+  <select id="s_class" name="class" required>
+    <option value="" disabled selected>Select Class</option>
+    <option value="11">11</option>
+    <option value="12">12</option>
+  </select>
+
+  <label>Section</label>
+  <select id="s_section" name="section" required>
+    <option value="" disabled selected>Select Section</option>
+    <option value="A">A</option>
+    <option value="B">B</option>
+    <option value="C">C</option>
+  </select>
+
+  <label>Parent Email</label>
+  <input type="email" name="parentEmail" placeholder="Enter parent email" required>
+
+  <label>Password</label>
+  <input type="password" name="password" placeholder="Enter password" required>
+
+  <label>Date of Birth</label>
+  <input type="date" name="dob" required>
+
+  <label>Gender</label>
+  <select name="gender" required>
+    <option value="" disabled selected>Select Gender</option>
+    <option value="Male">Male</option>
+    <option value="Female">Female</option>
+  </select>
+
+  <label>Father Name</label>
+  <input type="text" name="fatherName" placeholder="Enter father name" required>
+
+  <label>Mother Name</label>
+  <input type="text" name="motherName" placeholder="Enter mother name" required>
+
+  <label>Father Contact</label>
+  <input type="text" name="fatherContact" placeholder="Enter father contact" required>
+
+  <label>Mother Contact</label>
+  <input type="text" name="motherContact" placeholder="Enter mother contact" required>
+
+  <label>Address</label>
+  <textarea name="address" placeholder="Enter address" required></textarea>
+
+  <label>Bus Facility</label>
+  <select name="busFacility" required>
+    <option value="" disabled selected>Select Option</option>
+    <option value="No">No</option>
+    <option value="Yes">Yes</option>
+  </select>
+
+  <label>Hostel Facility</label>
+  <select name="hostelFacility" required>
+    <option value="" disabled selected>Select Option</option>
+    <option value="No">No</option>
+    <option value="Yes">Yes</option>
+  </select>
+
+  <button type="submit">Add Student</button>
+</form>
+
+
+    <hr><br>
+<h2>All Students</h2>
+
+<label>Filter by Class:</label>
+<select id="filterClass">
+  <option value="">Select Class</option>
+  <option value="11">11</option>
+  <option value="12">12</option>
+</select>
+
+<label>Filter by Section:</label>
+<select id="filterSection">
+  <option value="">Select Section</option>
+  <option value="A">A</option>
+  <option value="B">B</option>
+  <option value="C">C</option>
+</select>
+
+
+    <table id="studentTable">
+      <tr>
+        <th>Reg No</th>
+        <th>Name</th>
+        <th>Class</th>
+        <th>Section</th>
+        <th>Edit</th>
+        <th>Delete</th>
+      </tr>
+    </table>
+  </div>
+
+
+<div id="editPopup" class="section">
+  <div class="popup-content">
+    <h3>Edit Student</h3>
+
+    <input type="hidden" id="edit_regNo">
+
+    <label>Name</label>
+    <input id="edit_name">
+
+    <label>Class</label>
+    <select id="edit_class">
+      <option>11</option>
+      <option>12</option>
+    </select>
+
+    <label>Section</label>
+    <select id="edit_section">
+      <option>A</option>
+      <option>B</option>
+      <option>C</option>
+    </select>
+
+    <label>Parent Email</label>
+    <input id="edit_parentEmail">
+
+    <label>DOB</label>
+    <input type="date" id="edit_dob">
+
+    <label>Gender</label>
+    <select id="edit_gender">
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <label>Father Name</label>
+    <input id="edit_fatherName">
+
+    <label>Mother Name</label>
+    <input id="edit_motherName">
+
+    <label>Father Contact</label>
+    <input id="edit_fatherContact">
+
+    <label>Mother Contact</label>
+    <input id="edit_motherContact">
+
+    <label>Address</label>
+    <textarea id="edit_address"></textarea>
+
+    <label>Bus Facility</label>
+    <select id="edit_busFacility">
+      <option>No</option>
+      <option>Yes</option>
+    </select>
+
+    <label>Hostel Facility</label>
+    <select id="edit_hostelFacility">
+      <option>No</option>
+      <option>Yes</option>
+    </select>
+
+    <button onclick="updateStudent()">Save Changes</button>
+    <button onclick="closePopup()">Cancel</button>
+  </div>
+</div>
+
+
+<!-- TEACHERS SECTION -->
+<div id="teachers" class="section">
+  <h1>Add New Teacher</h1>
+
+  <div class="success" id="teacherSuccess">Teacher added successfully!</div>
+  <div class="error" id="teacherError">Something went wrong!</div>
+
+  <form id="addTeacherForm">
+    <label style="margin-top: 0;">Name</label>
+    <input name="name" type="text" id="s_name" placeholder="Enter Teacher name" required>
+
+    <label>Email</label>
+    <input type="email" name="email" placeholder="Enter email" required>
+
+    <label>Password</label>
+    <input type="password" name="password" placeholder="Enter password" required>
+
+    <label>Phone</label>
+    <input name="phone" type="text" placeholder="Enter phone number" required>
+
+    <label>Date of Birth</label>
+    <input type="date" name="dob" id="teacher_dob" required>
+    <script>
+      document.getElementById('teacher_dob').max = new Date().toISOString().split("T")[0];
+    </script>
+
+    <label>Gender</label>
+    <select name="gender" required>
+      <option value="" disabled selected>Select Gender</option>
+      <option>Male</option>
+      <option>Female</option>
+    </select>
+
+    <label>Qualification</label>
+    <input name="qualification" placeholder="Enter qualification" type="text" required>
+
+    <label>Experience</label>
+    <input name="experience" type="text" placeholder="Enter experience" required>
+
+    <label>Subject</label>
+    <input name="subject" type="text" placeholder="Enter subject" required>
+
+    <label>Class Assigned</label>
+    <select name="classAssigned">
+      <option value="" disabled selected>Select Class</option>
+      <option>11</option>
+      <option>12</option>
+    </select>
+
+    <label>Section Assigned</label>
+    <select name="sectionAssigned">
+      <option value="" disabled selected>Select Section</option>
+      <option>A</option>
+      <option>B</option>
+      <option>C</option>
+    </select>
+
+    <label>Class Teacher</label>
+    <select name="isClassTeacher" required>
+      <option value="" disabled selected>Select</option>
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
+
+    <label>Address</label>
+    <textarea name="address" placeholder="Enter address" required></textarea>
+
+    <button type="submit">Add Teacher</button>
+  </form>
+
+  <hr><br>
+
+  <h2>All Teachers</h2>
+
+  <table id="teacherTable">
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Subject</th>
+      <th>Class</th>
+      <th>Section</th>
+      <th>Edit</th>
+      <th>Delete</th>
+    </tr>
+  </table>
+</div>
+
+<div id="editTeacherPopup" class="section">
+  <div class="popup-content">
+    <h3>Edit Teacher</h3>
+
+    <input type="hidden" id="editTeacherEmail">
+
+    <label>Name</label>
+    <input id="edit_t_name">
+
+    <label>Phone</label>
+    <input id="edit_t_phone">
+
+    <label>Qualification</label>
+    <input id="edit_t_qualification">
+
+    <label>Experience</label>
+    <input id="edit_t_experience">
+
+    <label>Subject</label>
+    <input id="edit_t_subject">
+
+    <label>Class</label>
+    <select id="edit_t_class">
+      <option>11</option>
+      <option>12</option>
+    </select>
+
+    <label>Section</label>
+    <select id="edit_t_section">
+      <option>A</option>
+      <option>B</option>
+      <option>C</option>
+    </select>
+
+    <label>Class Teacher</label>
+    <select id="edit_t_classTeacher">
+      <option value="true">Yes</option>
+      <option value="false">No</option>
+    </select>
+
+    <label>Address</label>
+    <textarea id="edit_t_address"></textarea>
+
+    <button onclick="updateTeacher()">Save Changes</button>
+    <button onclick="closeTeacherPopup()">Cancel</button>
+  </div>
+</div>
+
+<!-- TIMETABLE SECTION -->
+<div id="timetable" class="section">
+  <h1>Timetable</h1>
+
+  <div style="margin-bottom: 15px;">
+    <label>Class</label>
+    <select id="ttClass">
+      <option value="11">11</option>
+      <option value="12">12</option>
+    </select>
+
+    <label>Section</label>
+    <select id="ttSection">
+      <option value="A">A</option>
+      <option value="B">B</option>
+    </select>
+
+    <button onclick="loadTimetable()">Load Timetable</button>
+    <button onclick="showAddPeriodForm()">Add Period</button>
+  </div>
+
+  <!-- Add Period Inline Form -->
+  <div id="addPeriodForm" style="display:none; margin-bottom: 20px; border: 1px solid #ccc; padding: 15px; border-radius: 5px;">
+    <h3>Add New Period</h3>
+    <label>Day</label>
+    <select id="addPeriodDay">
+      <option>Monday</option>
+      <option>Tuesday</option>
+      <option>Wednesday</option>
+      <option>Thursday</option>
+      <option>Friday</option>
+      <option>Saturday</option>
+    </select>
+
+    <label>Time</label>
+    <input type="text" id="addPeriodTime" placeholder="e.g. 09:00 - 10:00">
+
+    <label>Subject</label>
+    <input type="text" id="addPeriodSubject" placeholder="Enter subject">
+
+    <label>Teacher</label>
+    <input type="text" id="addPeriodTeacher" placeholder="Enter teacher">
+
+    <button onclick="addPeriodSlot()">Add</button>
+    <button onclick="hideAddPeriodForm()">Cancel</button>
+  </div>
+
+  <div id="timetableDisplay"></div>
+</div>
+
+<!-- EDIT TIMETABLE SLOT POPUP -->
+<div id="editTimetablePopup" class="section" style="display:none;">
+  <div class="popup-content">
+    <h3>Edit Timetable Slot</h3>
+
+    <input type="hidden" id="edit_tt_class">
+    <input type="hidden" id="edit_tt_section">
+    <input type="hidden" id="edit_tt_day">
+    <input type="hidden" id="edit_tt_index">
+
+    <label>Time</label>
+    <input id="edit_tt_time_input" type="text">
+
+    <label>Subject</label>
+    <input id="edit_tt_subject_input" type="text">
+
+    <label>Teacher</label>
+    <input id="edit_tt_teacher_input" type="text">
+
+    <button onclick="saveTimetableSlot()">Save</button>
+    <button onclick="closeTimetablePopup()">Cancel</button>
+  </div>
+</div>
+
+<script src="admin-dashboard.js"></script>
+
+</body>
+</html>
