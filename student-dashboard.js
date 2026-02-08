@@ -9,6 +9,7 @@ function showSection(sectionId, element) {
 }
 
 // ✅ Load Student Profile
+// ✅ Load Student Profile
 async function loadStudentProfile() {
   const regno = localStorage.getItem("studentRegNo");
   if (!regno) {
@@ -26,6 +27,7 @@ async function loadStudentProfile() {
       return;
     }
 
+    // ✅ Basic info
     document.getElementById("profileName").textContent = data.name || "N/A";
     document.getElementById("profileRegNo").textContent = data.regNo || "N/A";
     document.getElementById("profileClass").textContent = data.class || "N/A";
@@ -39,8 +41,10 @@ async function loadStudentProfile() {
     document.getElementById("motherContact").textContent = data.motherContact || "N/A";
     document.getElementById("address").textContent = data.address || "N/A";
 
+    // ✅ Load profile photo from backend
     document.getElementById("profilePhoto").src = `${apiBase}/student/photo/${regno}?t=${Date.now()}`;
 
+    // ✅ Load 10th Marks card (PDF/Image)
     const marksResponse = await fetch(`${apiBase}/student/tenthmarks/${regno}`);
     const marksFileLink = document.getElementById("marksFileLink");
 
@@ -64,6 +68,7 @@ async function loadStudentProfile() {
     console.error("Error loading profile:", err);
   }
 }
+
 
 // ✅ Upload Profile Photo
 async function uploadProfilePhoto(event) {
@@ -103,53 +108,28 @@ async function uploadTenthMarks(event) {
 
   if (res.ok) {
     alert("10th Marks uploaded successfully!");
-    loadStudentProfile(); 
+    loadStudentProfile(); // reload preview
   } else {
     alert("Error uploading marks.");
   }
 }
 
-// ✅ Attendance
-async function loadStudentAttendance() {
-  const regno = localStorage.getItem("studentRegNo");
-  try {
-    const res = await fetch(`${apiBase}/student-attendance/${regno}`);
-    const data = await res.json();
-    const table = document.getElementById("attendanceTable");
-    table.innerHTML = "";
 
-    if (!data.length) {
-      table.innerHTML = "<tr><td colspan='3'>No attendance records</td></tr>";
-      document.getElementById("attendancePercent").textContent = "0%";
-      return;
-    }
-
-    let totalDays = 0, presentDays = 0;
-
-    data.forEach(record => {
-      record.students.forEach(student => {
-        if (student.regNo === regno) {
-          totalDays++;
-          if (student.present) presentDays++;
-          const row = document.createElement("tr");
-          row.innerHTML = `
-            <td>${record.date}</td>
-            <td>${record.subject}</td>
-            <td>${student.present ? "✅ Present" : "❌ Absent"}</td>
-          `;
-          table.appendChild(row);
-        }
-      });
-    });
-
-    const percentage = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
-    document.getElementById("attendancePercent").textContent = `${percentage}%`;
-  } catch (err) {
-    console.error("Error loading attendance:", err);
-  }
+// ✅ Attendance percentage calculation
+function calculateAttendance() {
+  const rows = document.querySelectorAll("#attendance tbody tr");
+  let present = 0, total = 0;
+  rows.forEach(row => {
+    const status = row.cells[1].textContent.trim().toLowerCase();
+    if (status === "present") present++;
+    total++;
+  });
+  const percent = total ? ((present / total) * 100).toFixed(2) : 0;
+  document.getElementById("attendancePercent").textContent = percent + "%";
 }
 
-// ✅ Timetable
+
+
 /// ✅ Load Student Timetable
 async function loadStudentTimetable() {
   const regno = localStorage.getItem("studentRegNo");
@@ -249,31 +229,86 @@ function displayTodaySchedule(timetable) {
 
 
 
-// ✅ Marks
+
+// ✅ Load attendance
+async function loadStudentAttendance() {
+  const regno = localStorage.getItem("studentRegNo");
+  try {
+    const res = await fetch(`${apiBase}/student-attendance/${regno}`);
+    const data = await res.json();
+    const table = document.getElementById("attendanceTable");
+    table.innerHTML = "";
+
+    if (!data.length) {
+      table.innerHTML = "<tr><td colspan='3'>No attendance records</td></tr>";
+      document.getElementById("attendancePercent").textContent = "0%";
+      return;
+    }
+
+    let totalDays = 0, presentDays = 0;
+
+    data.forEach(record => {
+      record.students.forEach(student => {
+        if (student.regNo === regno) {
+          totalDays++;
+          if (student.present) presentDays++;
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${record.date}</td>
+            <td>${student.present ? "Present" : "Absent"}</td>
+          `;
+          table.appendChild(row);
+        }
+      });
+    });
+
+    const percentage = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
+    document.getElementById("attendancePercent").textContent = `${percentage}%`;
+  } catch (err) {
+    console.error("Error loading attendance:", err);
+  }
+}
+
+
+
+// ✅ Load Student Marks (Flat View)
 async function loadStudentMarks() {
   const regno = localStorage.getItem("studentRegNo");
   const res = await fetch(`${apiBase}/student-marks/${regno}`);
   const data = await res.json();
+
   const table = document.getElementById("marksTable");
   table.innerHTML = "";
-  if (!data.length) return (table.innerHTML = "<tr><td colspan='5'>No marks records</td></tr>");
-  
-  data.forEach(record => {
-    record.marks.forEach(m => {
-      if (m.regNo === regno) {
-        table.innerHTML += `<tr>
-          <td>${record.subject}</td>
-          <td>${record.examType}</td>
+
+  const subjects = ["English", "Physics", "Chemistry", "Mathematics", "Biology", "Computer Science"];
+
+  if (!data.length) {
+    table.innerHTML = "<tr><td colspan='5'>No marks available</td></tr>";
+    return;
+  }
+
+  // 🔹 Sort exams by date (newest first)
+  data.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  // 🔹 Build table
+  data.forEach(exam => {
+    exam.marks.forEach(m => {
+      table.innerHTML += `
+        <tr>
+          <td>${m.subject}</td>
+          <td>${exam.examType}</td>
           <td>${m.scored}</td>
           <td>${m.total}</td>
-          <td>${record.date}</td>
-        </tr>`;
-      }
+          <td>${exam.date}</td>
+        </tr>
+      `;
     });
   });
 }
 
-// ✅ Notes
+
+
+
 async function loadNotes() {
   try {
     const res = await fetch(`${apiBase}/notes`);
@@ -287,7 +322,7 @@ async function loadNotes() {
     }
 
     notes.forEach(note => {
-      const filePath = `${apiBase}${note.fileUrl}`;
+      const filePath = `${apiBase}${note.fileUrl}`; 
       const li = document.createElement("li");
       li.innerHTML = `<a href="${filePath}" target="_blank">${note.subject} - ${note.title}</a>`;
       notesList.appendChild(li);
@@ -298,7 +333,7 @@ async function loadNotes() {
   }
 }
 
-// ✅ Academic Calendar
+// Academic Calendar
 const events = {
   "2025-06-12": { type: "event", label: "College Reopens" },
   "2025-08-15": { type: "holiday", label: "Independence Day" },
@@ -369,11 +404,129 @@ document.addEventListener("DOMContentLoaded", () => {
   if (monthSelect) renderCalendar();
 });
 
-// ✅ Page Load
+
+// Load Bus Facility (Frontend)
+async function loadBusFacility() {
+  const regNo = localStorage.getItem("studentRegNo");
+  const facilitiesDiv = document.getElementById("facilities");
+  if (!facilitiesDiv) return;
+
+  try {
+    const res = await fetch(`${apiBase}/bus-facility/${regNo}`);
+    const data = await res.json();
+
+    if (data.data === null || data.message?.includes("not opted")) {
+      facilitiesDiv.innerHTML = `
+        <div class="facility-card">
+          <h3>Bus Facility</h3>
+          <p>Not opted.</p>
+        </div>`;
+    } else if (res.ok) {
+      facilitiesDiv.innerHTML = `
+        <div class="facility-card">
+          <h3> Bus Facility</h3>
+          <p><strong>Route No:</strong> ${data.routeNo}</p>
+          <p><strong>Pickup Point:</strong> ${data.pickupPoint}</p>
+          <p><strong>Driver:</strong> ${data.driverName}</p>
+          <p><strong>Contact:</strong> ${data.driverContact}</p>
+          <p><strong>Timing:</strong> ${data.timing}</p>
+        </div>`;
+    } else {
+      facilitiesDiv.innerHTML = "<p>No bus details found.</p>";
+    }
+  } catch (err) {
+    facilitiesDiv.innerHTML = "<p> Error loading bus facility.</p>";
+    console.error("Error fetching bus facility:", err);
+  }
+}
+
+//  Load Student Facilities (Bus only)
+async function loadFacilities() {
+  const regNo = localStorage.getItem("studentRegNo");
+  const facilitiesDiv = document.getElementById("facilities");
+
+  if (!facilitiesDiv) return; // if section doesn't exist
+  if (!regNo) {
+    facilitiesDiv.innerHTML = "<p>Please log in to view your facilities.</p>";
+    return;
+  }
+
+  try {
+    let html = `<h2>Facilities</h2>`;
+
+    //  Bus Facility
+    const busRes = await fetch(`${apiBase}/bus-facility/${regNo}`);
+    const busJson = await busRes.json();
+
+    if (busJson.data === null || busJson.message?.includes("not opted")) {
+      html += `<div class="facility-card"><h3>Bus Facility</h3><p>Not opted.</p></div>`;
+    } else if (busRes.ok) {
+      const busData = busJson;
+      html += `
+        <div class="facility-card">
+          <h3>Bus Facility</h3>
+          <p><strong>Route No:</strong> ${busData.routeNo}</p>
+          <p><strong>Pickup Point:</strong> ${busData.pickupPoint}</p>
+          <p><strong>Driver:</strong> ${busData.driverName}</p>
+          <p><strong>Contact:</strong> ${busData.driverContact}</p>
+          <p><strong>Timing:</strong> ${busData.timing}</p>
+        </div>`;
+    }
+
+    facilitiesDiv.innerHTML = html;
+  } catch (err) {
+    facilitiesDiv.innerHTML = "<p> Error loading facilities.</p>";
+    console.error("Error fetching facilities:", err);
+  }
+}
+
+
+
+//  Load Hostel Facility
+async function loadHostelFacility() {
+  const regNo = localStorage.getItem("studentRegNo");
+  const facilitiesDiv = document.getElementById("facilities");
+  if (!facilitiesDiv) return;
+
+  try {
+    const res = await fetch(`${apiBase}/hostel-facility/${regNo}`);
+    const data = await res.json();
+
+    if (!data.data || data.message?.includes("not opted")) {
+      facilitiesDiv.innerHTML += `
+        <div class="facility-card">
+          <h3>Hostel Facility</h3>
+          <p>Not opted.</p>
+        </div>`;
+    } else {
+      const h = data.data;
+      facilitiesDiv.innerHTML += `
+        <div class="facility-card">
+          <h3>Hostel Facility</h3>
+          <p><strong>Room No:</strong> ${h.roomNo}</p>
+          <p><strong>Block:</strong> ${h.block}</p>
+          <p><strong>Warden:</strong> ${h.wardenName}</p>
+          <p><strong>Contact:</strong> ${h.wardenContact}</p>
+        </div>`;
+    }
+  } catch (err) {
+    facilitiesDiv.innerHTML += "<p> Error loading hostel facility.</p>";
+    console.error("Error fetching hostel facility:", err);
+  }
+}
+
+
+
+
+
+
+// ✅ On page load
 window.onload = async () => {
   await loadStudentProfile();
   await loadStudentTimetable();
   await loadNotes();
   await loadStudentAttendance();
   await loadStudentMarks();
+  await loadFacilities(); 
+  await loadHostelFacility();
 };
