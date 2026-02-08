@@ -24,6 +24,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       localStorage.setItem("teacherSubject", data.subject);
       localStorage.setItem("teacherName", data.name);
 
+      if (data.isClassTeacher) {
+      document.getElementById("marksBtn").style.display = "block";
+    } else {
+      document.getElementById("marksBtn").style.display = "none";
+    }
+
+
       // ✅ Display profile neatly with photo upload
       document.getElementById("contentArea").innerHTML = `
         <div class="profile-card">
@@ -89,27 +96,105 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 
   // 🔹 ATTENDANCE SECTION
-document.getElementById("attendanceBtn").addEventListener("click", async () => {
-  const teacherName = localStorage.getItem("teacherName");
-  const res = await fetch(`${apiBase}/teacher/classes/${teacherName}`);
-  const classSections = await res.json();
+  document.getElementById("attendanceBtn").addEventListener("click", async () => {
+    document.getElementById("contentArea").innerHTML = `
+      <h2>Mark Attendance</h2>
+      <label>Select Class:</label>
+      <select id="classSelect">
+        <option value="">-- Choose Class --</option>
+        <option value="11-A">Class 11 - A</option>
+        <option value="11-B">Class 11 - B</option>
+        <option value="12-A">Class 12 - A</option>
+        <option value="12-B">Class 12 - B</option>
+      </select>
+      <div id="studentList"></div>
+    `;
 
+    document.getElementById("classSelect").addEventListener("change", async (e) => {
+      const selected = e.target.value;
+      if (!selected) return;
+
+      const [cls, section] = selected.split("-");
+      const res = await fetch(`http://localhost:5000/classes/${cls}/${section}`);
+      const students = await res.json();
+
+      if (!students.length) {
+        document.getElementById("studentList").innerHTML = "<p>No students found.</p>";
+        return;
+      }
+
+      const formHTML = `
+        <form id="attendanceForm">
+          <table>
+            <thead><tr><th>Reg No</th><th>Name</th><th>Present</th></tr></thead>
+            <tbody>
+              ${students.map(s => `
+                <tr>
+                  <td>${s.regNo}</td>
+                  <td>${s.name}</td>
+                  <td><input type="checkbox" id="${s.regNo}" checked></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <button class="btn" type="submit">Submit Attendance</button>
+        </form>
+      `;
+      document.getElementById("studentList").innerHTML = formHTML;
+
+      document.getElementById("attendanceForm").addEventListener("submit", async (ev) => {
+        ev.preventDefault();
+
+        const records = [];
+        students.forEach(s => {
+          const present = document.getElementById(s.regNo).checked;
+          records.push({ regNo: s.regNo, name: s.name, present });
+        });
+
+        const response = await fetch("http://localhost:5000/attendance/mark", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            class: cls,
+            section,
+            subject: localStorage.getItem("teacherSubject"),
+            teacherEmail: email,
+            date: new Date().toISOString().split("T")[0],
+            students: records
+          }),
+        });
+
+        const result = await response.json();
+        if (result.error) alert(result.error);
+        else alert("Attendance marked successfully!");
+      });
+    });
+  });
+
+
+// 🔹 MARKS SECTION
+document.getElementById("marksBtn").addEventListener("click", async () => {
   document.getElementById("contentArea").innerHTML = `
-    <h2>📋 Mark Attendance</h2>
+    <h2>Upload Marks</h2>
     <label>Select Class:</label>
-    <select id="classSelect">
+    <select id="marksClassSelect">
       <option value="">-- Choose Class --</option>
-      ${classSections.map(cs => `<option value="${cs}">Class ${cs.replace("-", " - ")}</option>`).join("")}
+      <option value="11-A">Class 11 - A</option>
+      <option value="11-B">Class 11 - B</option>
+      <option value="12-A">Class 12 - A</option>
+      <option value="12-B">Class 12 - B</option>
     </select>
     <div id="studentList"></div>
+    <div id="marksFormContainer"></div>
   `;
 
-  document.getElementById("classSelect").addEventListener("change", async (e) => {
+  // Step 1: Load students when class selected
+  document.getElementById("marksClassSelect").addEventListener("change", async (e) => {
     const selected = e.target.value;
     if (!selected) return;
 
     const [cls, section] = selected.split("-");
-    const res = await fetch(`${apiBase}/classes/${cls}/${section}`);
+    const res = await fetch(`http://localhost:5000/classes/${cls}/${section}`);
     const students = await res.json();
 
     if (!students.length) {
@@ -117,132 +202,88 @@ document.getElementById("attendanceBtn").addEventListener("click", async () => {
       return;
     }
 
-    const formHTML = `
-      <form id="attendanceForm">
-        <table>
-          <thead><tr><th>Reg No</th><th>Name</th><th>Present</th></tr></thead>
-          <tbody>
-            ${students.map(s => `
-              <tr>
-                <td>${s.regNo}</td>
-                <td>${s.name}</td>
-                <td><input type="checkbox" id="${s.regNo}" checked></td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-        <button class="btn" type="submit">Submit Attendance</button>
-      </form>
+    // Step 2: Dropdown to select student
+    document.getElementById("studentList").innerHTML = `
+      <label>Select Student:</label>
+      <select id="studentSelect">
+        <option value="">-- Choose Student --</option>
+        ${students.map(s => `<option value="${s.regNo}">${s.name} (${s.regNo})</option>`).join('')}
+      </select>
     `;
-    document.getElementById("studentList").innerHTML = formHTML;
 
-    document.getElementById("attendanceForm").addEventListener("submit", async (ev) => {
-      ev.preventDefault();
+    // Step 3: When student selected, show form for 6 subjects
+    document.getElementById("studentSelect").addEventListener("change", (ev) => {
+      const regNo = ev.target.value;
+      const student = students.find(s => s.regNo === regNo);
+      if (!student) {
+        document.getElementById("marksFormContainer").innerHTML = "";
+        return;
+      }
 
-      const records = students.map(s => ({
-        regNo: s.regNo,
-        name: s.name,
-        present: document.getElementById(s.regNo).checked
-      }));
+      const formHTML = `
+        <form id="marksForm">
+          <h3>Marks for ${student.name} (${student.regNo})</h3>
+          <table>
+            <thead>
+              <tr><th>Subject</th><th>Scored</th><th>Total</th></tr>
+            </thead>
+            <tbody>
+              ${["English", "Physics", "Chemistry", "Mathematics", "Biology", "Computer Science"]
+                .map(subj => `
+                  <tr>
+                    <td>${subj}</td>
+                    <td><input type="number" id="scored-${subj}" min="0" required></td>
+                    <td><input type="number" id="total-${subj}" min="0" required></td>
+                  </tr>
+                `).join('')}
+            </tbody>
+          </table>
+          <label>Exam Type:</label>
+          <input type="text" id="examType" placeholder="e.g. Midterm, Final" required>
+          <button class="btn" type="submit">Submit Marks</button>
+        </form>
+      `;
+      document.getElementById("marksFormContainer").innerHTML = formHTML;
 
-      const response = await fetch(`${apiBase}/attendance/mark`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          class: cls,
-          section,
-          subject: localStorage.getItem("teacherSubject"),
-          teacherEmail: email,
-          date: new Date().toISOString().split("T")[0],
-          students: records
-        })
+      // Step 4: Submit all 6 subjects
+      document.getElementById("marksForm").addEventListener("submit", async (e2) => {
+        e2.preventDefault();
+
+        const examType = document.getElementById("examType").value.trim();
+        if (!examType) return alert("Enter exam type");
+
+        const marksArray = ["English", "Physics", "Chemistry", "Mathematics", "Biology", "Computer Science"].map(subj => ({
+          subject: subj,
+          scored: parseInt(document.getElementById(`scored-${subj}`).value),
+          total: parseInt(document.getElementById(`total-${subj}`).value)
+        }));
+
+        // ✅ Fetch teacher email from localStorage (saved at login)
+        const teacherEmail = localStorage.getItem("teacherEmail");
+        if (!teacherEmail) {
+          alert("Teacher email not found. Please log in again.");
+          return;
+        }
+
+        // ✅ Send all data including teacherEmail
+        const response = await fetch("http://localhost:5000/marks/upload-all", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            regNo: student.regNo,
+            name: student.name,
+            class: cls,
+            section,
+            examType,
+            marks: marksArray,
+            teacherEmail // ✅ now included
+          }),
+        });
+
+        const result = await response.json();
+        if (result.error) alert(result.error);
+        else alert("All 6 subject marks uploaded & emailed to parent!");
       });
-
-      const result = await response.json();
-      if (result.error) alert(result.error);
-      else alert("✅ Attendance marked successfully!");
-    });
-  });
-});
-
-
-// 🔹 MARKS SECTION
-document.getElementById("marksBtn").addEventListener("click", async () => {
-  const teacherName = localStorage.getItem("teacherName");
-  const res = await fetch(`${apiBase}/teacher/classes/${teacherName}`);
-  const classSections = await res.json();
-
-  document.getElementById("contentArea").innerHTML = `
-    <h2>🧮 Upload Marks</h2>
-    <label>Select Class:</label>
-    <select id="marksClassSelect">
-      <option value="">-- Choose Class --</option>
-      ${classSections.map(cs => `<option value="${cs}">Class ${cs.replace("-", " - ")}</option>`).join("")}
-    </select>
-    <div id="marksList"></div>
-  `;
-
-  document.getElementById("marksClassSelect").addEventListener("change", async (e) => {
-    const selected = e.target.value;
-    if (!selected) return;
-
-    const [cls, section] = selected.split("-");
-    const res = await fetch(`${apiBase}/classes/${cls}/${section}`);
-    const students = await res.json();
-
-    if (!students.length) {
-      document.getElementById("marksList").innerHTML = "<p>No students found.</p>";
-      return;
-    }
-
-    const formHTML = `
-      <form id="marksForm">
-        <table>
-          <thead><tr><th>Reg No</th><th>Name</th><th>Marks</th><th>Total</th></tr></thead>
-          <tbody>
-            ${students.map(s => `
-              <tr>
-                <td>${s.regNo}</td>
-                <td>${s.name}</td>
-                <td><input type="number" id="marks-${s.regNo}" min="0" required></td>
-                <td><input type="number" id="total-${s.regNo}" min="0" required></td>
-              </tr>
-            `).join("")}
-          </tbody>
-        </table>
-        <label>Exam Type:</label><input type="text" id="examType" required>
-        <button class="btn" type="submit">Submit Marks</button>
-      </form>
-    `;
-    document.getElementById("marksList").innerHTML = formHTML;
-
-    document.getElementById("marksForm").addEventListener("submit", async (ev) => {
-      ev.preventDefault();
-      const examType = document.getElementById("examType").value.trim();
-
-      const marksArray = students.map(s => ({
-        regNo: s.regNo,
-        name: s.name,
-        scored: parseInt(document.getElementById(`marks-${s.regNo}`).value),
-        total: parseInt(document.getElementById(`total-${s.regNo}`).value)
-      }));
-
-      const response = await fetch(`${apiBase}/marks/upload`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          class: cls,
-          section,
-          subject: localStorage.getItem("teacherSubject"),
-          teacherEmail: email,
-          examType,
-          marks: marksArray
-        })
-      });
-
-      const result = await response.json();
-      if (result.error) alert(result.error);
-      else alert("✅ Marks uploaded successfully!");
     });
   });
 });
@@ -309,17 +350,17 @@ document.getElementById("marksBtn").addEventListener("click", async () => {
             noteItem.innerHTML = `
               <p><strong>Subject:</strong> ${data.note.subject}</p>
               <p><strong>Title:</strong> ${data.note.title}</p>
-              <a href="http://localhost:5000${data.note.fileUrl}" target="_blank">📄 View File</a>
+              <a href="http://localhost:5000${data.note.fileUrl}" target="_blank">View File</a>
 
-              <p>✅ Uploaded successfully!</p>
+              <p>Uploaded successfully!</p>
             `;
             uploadedNotesDiv.appendChild(noteItem);
             uploadForm.reset();
           } else {
-            alert("❌ Upload failed: " + data.error);
+            alert("Upload failed: " + data.error);
           }
         } catch (err) {
-          console.error("❌ Error uploading note:", err);
+          console.error("Error uploading note:", err);
           alert("Server error — check console for details.");
         }
       });
@@ -359,7 +400,7 @@ async function loadTeacherTimetable() {
     ];
 
     let timetableHTML = `
-      <h2>📅 ${teacherName}'s Timetable</h2>
+      <h2>${teacherName}'s Timetable</h2>
       <table class="timetable-table">
         <thead>
           <tr>
@@ -405,7 +446,7 @@ async function loadTeacherTimetable() {
         const subject = teacherSubject;
 
         document.getElementById("syllabusBelow").innerHTML =
-          `<p>📘 Loading syllabus for <b>${subject}</b> - ${className}${section ? "-" + section : ""}...</p>`;
+          `<p>Loading syllabus for <b>${subject}</b> - ${className}${section ? "-" + section : ""}...</p>`;
 
         try {
           const classNum = className.replace(/\D/g, ""); // get 11 / 12 etc.
@@ -422,7 +463,7 @@ let nextTopic = syllabus.topics.find(t => t.subtopics.some(st => !st.covered));
 
 if (!nextTopic) {
   document.getElementById("syllabusBelow").innerHTML = `
-    <p>🎉 All topics for <b>${subject}</b> in ${className}${section ? "-" + section : ""} are covered!</p>
+    <p>All topics for <b>${subject}</b> in ${className}${section ? "-" + section : ""} are covered!</p>
   `;
   return;
 }
@@ -432,14 +473,14 @@ let nextSubtopic = nextTopic.subtopics.find(st => !st.covered);
 
 if (!nextSubtopic) {
   document.getElementById("syllabusBelow").innerHTML = `
-    <p>✅ All subtopics under <b>${nextTopic.title}</b> are covered!</p>
+    <p>All subtopics under <b>${nextTopic.title}</b> are covered!</p>
   `;
   return;
 }
 
 // Show only the current subtopic
 let tableHTML = `
-  <h3>📚 Syllabus to be covered - ${subject} (${className}${section ? "-" + section : ""})</h3>
+  <h3>Syllabus to be covered - ${subject} (${className}${section ? "-" + section : ""})</h3>
   <h4>Topic: ${nextTopic.title}</h4>
   <table class="styled-table">
     <thead><tr><th>Subtopic</th><th>Hours</th><th>Status</th><th>Action</th></tr></thead>
@@ -448,7 +489,7 @@ let tableHTML = `
         <td>${nextSubtopic.title}</td>
         <td>${nextSubtopic.hours}</td>
         <td style="font-weight:bold; color:${nextSubtopic.covered ? 'green' : 'red'};">
-          ${nextSubtopic.covered ? '✅ Covered' : '❌ Pending'}
+          ${nextSubtopic.covered ? 'Covered' : 'Pending'}
         </td>
         <td>
           <button class="btn" style="padding:6px 10px;font-size:13px"
@@ -468,14 +509,14 @@ document.getElementById("syllabusBelow").innerHTML = tableHTML;
 
         } catch (err) {
           console.error("Error loading syllabus for slot:", err);
-          document.getElementById("syllabusBelow").innerHTML = `<p>⚠️ Failed to load syllabus.</p>`;
+          document.getElementById("syllabusBelow").innerHTML = `<p>Failed to load syllabus.</p>`;
         }
       });
     });
 
   } catch (err) {
     console.error("Error loading timetable:", err);
-    document.getElementById("contentArea").innerHTML = `<p>⚠️ Failed to load timetable.</p>`;
+    document.getElementById("contentArea").innerHTML = `<p>Failed to load timetable.</p>`;
   }
 }
 
@@ -486,7 +527,7 @@ document.getElementById("classesBtn").addEventListener("click", loadTeacherTimet
   async function loadSyllabusSection() {
     contentArea.innerHTML = `
       <div id="syllabusSection">
-        <h2>📚 Syllabus Progress Tracker</h2>
+        <h2>Syllabus Progress Tracker</h2>
         <div class="upload-form">
           <label>Select Class:</label>
           <select id="classSelect">
@@ -581,7 +622,7 @@ document.getElementById("classesBtn").addEventListener("click", loadTeacherTimet
             <td>${sub.title}</td>
             <td>${sub.hours}</td>
             <td style="font-weight:bold; color:${sub.covered ? 'green' : 'red'};">
-              ${sub.covered ? '✅ Covered' : '❌ Pending'}
+              ${sub.covered ? 'Covered' : 'Pending'}
             </td>
             <td>
               <button class="btn" style="padding:6px 10px;font-size:13px"
@@ -616,7 +657,7 @@ document.getElementById("classesBtn").addEventListener("click", loadTeacherTimet
         document.getElementById("topicSelect").dispatchEvent(new Event("change"));
       }
     } else {
-      alert("❌ Update failed. Please try again.");
+      alert("Update failed. Please try again.");
     }
   } catch (err) {
     console.error("Error updating subtopic:", err);
