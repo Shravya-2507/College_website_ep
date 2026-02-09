@@ -19,7 +19,7 @@ app.use(express.json());
 
 
 //MongoDB connection
-mongoose.connect(process.env.MONGO_URI || "mongodb+srv://var23cs_db_user:tJzV2jqqUfzHXlHI@cluster0.jt02qnt.mongodb.net/inventoryDB?retryWrites=true&w=majority&appName=Cluster0", {
+mongoose.connect(process.env.MONGO_URI , {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
@@ -1421,3 +1421,4 @@ app.get("/hostel-facility/:regNo", async (req, res) => {
 
 // -------------------- SERVER START --------------------
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
